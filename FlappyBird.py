@@ -15,6 +15,7 @@ pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird2.png"))),
 pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird3.png")))]
 
 BASE = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "base.png")))
+PIPE = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "pipe.png")))
 
 class Bird:
     IMGS = BIRDS
@@ -42,7 +43,7 @@ class Bird:
         d = self.velocity * self.tick_count + 0.5 * 3 * self.tick_count**2
 
         if (d >= 16):
-            d = ((d /abc(d)) * 16)
+            d = ((d /abs(d)) * 16)
         if (d <= 0):
             d -= 2
         self.y += d
@@ -133,13 +134,25 @@ class Pipe:
     def collide(self, bird):
         bird_mask = bird.get_mask()
         top_mask = pygame.mask.from_surface(self.PIPE_TOP)
-        bottom_mask pygame.mask.from_surface(self.PIPE_BOTTOM)
+        bottom_mask = pygame.mask.from_surface(self.PIPE_BOTTOM)
 
-        top_mask = (self.x - bird.x, self.top - round(bird.y))
+        top_offset = (self.x - bird.x, self.top - round(bird.y))
+        bottom_offset = (self.x - self.x, self.bottom - round(bird.y))
+
+        b_point = bird_mask.overlap(bottom_mask, bottom_offset)
+        t_point = bird_mask.overlap(top_mask, top_offset)
+
+        if (t_point or b_point):
+            return True
+        return False
 
 
-def draw_window(win, bird, base):
+def draw_window(win, bird, base, pipe):
     win.blit(BACKGROUND, (0, 0))
+    for pipe in pipes:
+        pipe.draw(win)
+    text = STAT_FONT.render("Score"+ str(score), 1,(255,255,255))
+    win.blit(text, (WIN_WIDTH - 10 - text.get_width(), 10))
     bird.draw(win)
     base.draw(win)
     pygame.display.update()
@@ -152,6 +165,7 @@ def main():
     bird = Bird(230, 350)
     base = Base(730)
     pipes = [Pipe(600)]
+    score = 0
 
     while (run):
         clock.tick(30)
@@ -160,6 +174,9 @@ def main():
                 run = False
                 pygame.quit()
                 quit()
+            if event.type == pygame.KEYDOWN:
+                if event.type == pygame.K_SPACE:
+                    bird.jump()
             
         pipe_ind = 0
 
@@ -170,7 +187,7 @@ def main():
         for pipe in pipes:
             if (pipe.collide(bird)):
                 main()
-            if (not (pip.passed) and (pipe.x < bird.x)):
+            if (not (pipe.passed) and (pipe.x < bird.x)):
                 pipe.passed = True
                 add_pipe = True
             
@@ -179,12 +196,12 @@ def main():
             pipe.move()
         
         if (add_pipe):
-            pipe.append(Pipe(600))
+            pipes.append(Pipe(600))
         
         for r in rem:
             pipes.remove(r)
 
-        draw_window(win, bird, base)
+        draw_window(win, bird, base, pipe)
 
 if __name__ == "__main__":
     main()
